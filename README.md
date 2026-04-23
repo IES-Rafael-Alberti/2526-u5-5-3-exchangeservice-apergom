@@ -1,4 +1,9 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Og7iRJ-r)
 # Mock, Stub o Spy en Kotlin
+
+Antes de empezar, recuerda que el objetivo es realizar la práctica aqui enlazada:
+- [pŕactica](#ejercicio-propuesto)
+- [preguntas](#preguntas)
 
 Este proyecto usa `Kotest` y `MockK` para probar un servicio de cambio de divisas. Antes de escribir pruebas, conviene tener clara la diferencia entre tres dobles de prueba muy habituales: `stub`, `spy` y `mock`.
 
@@ -259,9 +264,9 @@ Empieza siempre por el doble más simple que permita expresar bien la prueba:
 
 Eso suele producir tests más claros, más mantenibles y menos frágiles.
 
-## Ejercicio Propuesto: Batería de Pruebas para `ExchangeService`
+## Ejercicio Propuesto
 
-El ejercicio consiste en diseñar una batería de pruebas desde cero, a partir de la especificación del servicio y aplicando clases de equivalencia y selección consciente de dobles de prueba.
+El ejercicio consiste en diseñar una batería de pruebas para `ExchangeService` desde cero, a partir de la especificación del servicio y aplicando clases de equivalencia y selección consciente de dobles de prueba.
 
 siguiendo el estilo de `DescribeSpec` de `Kotest` y usando `MockK` para los dobles.
 
@@ -373,15 +378,77 @@ Implementa una batería con al menos los siguientes tests:
 
 El alumnado debe implementar una batería de pruebas propia para `ExchangeService`. Puedes usar las clases de equivalencia y casos propuestos como guía, o puedes diseñar tus propias clases de equivalencia y casos partiendo de los que ya hay. Lo importante es que la batería cubra aspectos relevantes (Clses de equivalencias) del servicio y que el uso de `stub`, `spy` y `mock` esté justificado por el caso concreto.
 
+El alumnado debe responder a las preguntas de mas abajo.
+
 La solución debe:
 
 - justificar implícitamente el uso de `stub`, `spy` y `mock`
 - cubrir las clases de equivalencia anterioresv o tuyas
 - verificar tanto resultados como interacciones cuando corresponda
 
+## Respuestas a Preguntas de Evaluación
 
-## Fuente conceptual
+#### 🔹 1) CE b) Se han definido casos de prueba
 
-La explicación conceptual de este documento se apoya en el artículo:
+**Identifica al menos 3 casos de prueba de tu batería:**
 
-- Rob Bell, "Mock, Stub, or Spy? What's the Difference, and When Should I Use Each?", Atomic Object
+1.  **Test: "2. Debe lanzar excepción si la cantidad es negativa"**
+    *   **Clase de equivalencia:** Inválida (cantidad < 0).
+    *   **Condición del servicio:** Validación temprana de la entrada.
+    *   **Representatividad:** Es crítico validar que no se operen números negativos antes de consultar proveedores de tasas, evitando cálculos que rompan la lógica financiera del sistema.
+    *   **Enlace:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L32-L36
+
+2.  **Test: "6. Debe convertir correctamente usando una tasa directa con stub"**
+    *   **Clase de equivalencia:** Válida (origen != destino con tasa directa existente).
+    *   **Condición del servicio:** Happy path de conversión directa.
+    *   **Representatividad:** Prueba la responsabilidad principal del servicio (aplicar la multiplicación de la tasa) sin añadir complejidad de rutas cruzadas.
+    *   **Enlace:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L64-L72
+
+3.  **Test: "8. Debe resolver una conversión cruzada cuando la tasa directa no exista usando mock"**
+    *   **Clase de equivalencia:** Válida (origen != destino, la ruta directa no existe pero sí una ruta intermedia).
+    *   **Condición del servicio:** Búsqueda en rutas secundarias (Fallback / conversión cruzada en 2 pasos).
+    *   **Representatividad:** Evalúa la lógica algorítmica más compleja del servicio, comprobando que captura el error del primer intento e itera correctamente buscando cruces.
+    *   **Enlace:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L92-L105
+
+
+#### 🔹 2) CE f) Se han efectuado pruebas unitarias de clases y funciones
+
+**Selecciona uno de tus tests y explica cómo se trata de una prueba unitaria real:**
+
+He seleccionado el test **"9. Debe intentar una segunda ruta intermedia si la primera falla usando mock"**.
+*   **Método que pruebo:** `ExchangeService.exchange()`.
+*   **Aislamiento:** La lógica del `ExchangeService` está completamente aislada del acceso real a datos porque se le inyecta un `mockProvider` (creado con MockK). Se configuran excepciones falsas para el par directo (`USDJPY`) y el primer cruce (`GBPJPY`), aislando la prueba de fallos de red o bases de datos no disponibles.
+*   **Entrada y salida:** La entrada es `Money(10, "USD")` hacia la moneda `"JPY"`. La salida esperada y verificada mediante `shouldBe` es `1440L` (tras calcular 10 * 0.90 * 160.0).
+*   **Justificación:** Es unitaria porque evalúa *solamente* la lógica interna de iteración y cálculo de `ExchangeService` frente a adversidades, sin probar al proveedor.
+*   **Enlace:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L106-L125
+
+
+#### 🔹 3) CE g) Se han implementado pruebas automáticas
+
+**Explica cómo se ejecuta tu batería de pruebas de forma automática:**
+
+*   **Herramienta:** Utilizo **Kotest** como framework de especificaciones (`DescribeSpec`, `shouldBe`, `shouldThrow`) junto a **MockK** para los dobles. Todo orquestado por **Gradle**.
+*   **Ejecución:** Las pruebas se lanzan sin intervención manual ejecutando la tarea de Gradle (`./gradlew test` en terminal, o desde el botón "Run Tests" del IDE). El motor JUnit Platform integrado en Gradle descubre todas las clases Kotest y las ejecuta secuencialmente.
+*   **Evidencia:** Las aserciones automáticas (`shouldBe`, `shouldThrow`, `verifySequence`) dictaminan el éxito o fracaso del test. Si el código no devuelve lo esperado, el pipeline de Gradle fallará, impidiendo compilaciones inválidas.
+*   **Enlace a la configuración:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/build.gradle.kts#L1-L24 
+*   **Enlace a la ejecución (cabecera del test):** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L13-L163
+
+
+#### 🔹 4) CE h) Se han documentado las incidencias detectadas
+
+**Incidencia detectada durante el desarrollo:**
+
+*   **Test implicado:** "10. Debe lanzar excepción si no existe ninguna ruta válida".
+*   **Comportamiento detectado / Contexto:** Durante el desarrollo, si el bloque iterativo captura todas las excepciones (con `runCatching`) y ninguna ruta cruzada tiene éxito, la variable `crossConversionResult` queda nula. Si no se maneja correctamente al final del método, el sistema fallaría devolviendo nulo en vez de propagar el error de negocio.
+*   **Solución documentada mediante el test:** Se fuerza el peor escenario posible (haciendo que el mock lance excepciones para `any()`) y se valida que el servicio reacciona devolviendo una explícita `IllegalArgumentException` protegida por `shouldThrow`. Documentar esto como un caso de prueba evita regresiones en producción donde un cruce de divisas fallido silencioso causaría inconsistencias financieras.
+*   **Enlace al test:** https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L127-L137
+
+
+#### 🔹 5) CE i) Se han utilizado dobles de prueba para aislar los componentes durante las pruebas
+
+**Análisis del uso de dobles de prueba en mi batería:**
+
+*   **Uso de STUB (Test 6):** Se ha configurado un stub simple con `every { stubProvider.rate("USDEUR") } returns 0.90`. El objetivo es únicamente proporcionar un valor estático para comprobar la matemática del servicio. https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L64-L72.
+*   **Uso de MOCK (Test 11):** Aquí uso el mock de forma avanzada definiendo múltiples retornos y excepciones. El objetivo principal es usar `verifySequence { ... }` para garantizar que la iteración de búsqueda sigue el **orden exacto** esperado, fallando si la lógica intenta cruces de forma aleatoria o redundante. https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L139-L161.
+*   **Uso de SPY (Test 7):** Se usa `spyk(realProvider)`. El objetivo es usar la lógica de memoria real (diccionario de datos), pero permitiéndonos inspeccionar con `verify(exactly = 1)` que el servicio no hace llamadas duplicadas innecesarias al diccionario para una misma petición. https://github.com/IES-Rafael-Alberti/2526-u5-5-3-exchangeservice-apergom/blob/9f361ae3fc3042540a5c9df9f8bd3a42d5dd8889/src/test/kotlin/ExchangeServiceDesignedBatteryTest.kt#L74-L86.
+*   **Problema del acoplamiento:** Si usara `InMemoryExchangeRateProvider` para todo, estaría fuertemente acoplado. Sería muy difícil probar la lógica de fallback/retry (Test 9) porque tendría que modificar el estado interno del objeto en memoria para simular excepciones, lo cual ensucia el código. Usar dobles permite que `ExchangeService` se pruebe al 100% independientemente del estado de su dependencia.
